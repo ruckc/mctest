@@ -1,5 +1,6 @@
 package io.ruck.mctest;
 
+import com.google.common.net.InetAddresses;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
@@ -11,27 +12,30 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @author ruckc
  */
 public final class MCProducer {
-    
+
     private MCProducer() {
     }
-    
-    public static void main(String[] args) throws IOException, InterruptedException {
-        if (args.length != 1) {
-            System.err.println("Usage: java -cp mctest.jar io.ruck.mctest.MCProducer <multicast group>");
-            System.exit(1);
+
+    public static void run(MCOptions opts) throws IOException, InterruptedException {
+        MulticastSocket[] sockets = new MulticastSocket[opts.getQuantity()];
+        // setup
+        for (int i = 0; i < sockets.length; i++) {
+            sockets[i] = new MulticastSocket();
+            sockets[i].setTimeToLive(5);
         }
-        InetAddress group = InetAddress.getByName(args[0]);
-        
-        MulticastSocket socket = new MulticastSocket();
-        socket.setTimeToLive(5);
-        
-        for (int i = 0; i < Integer.MAX_VALUE; i++) {
-            String payload = String.format("RUCKDUCK %09d", i);
+
+        for (int j = 0; j < Integer.MAX_VALUE; j++) {
+            String payload = String.format("RUCKDUCK %09d", j);
             byte[] bytes = payload.getBytes(UTF_8);
-            DatagramPacket packet = new DatagramPacket(bytes, bytes.length, group, 5000);
-            socket.send(packet);
-            System.out.println("Sent: " + payload);
-            Thread.sleep(1000);
+
+            int base = InetAddresses.coerceToInteger(opts.getGroup());
+            for (int i = 0; i < sockets.length; i++) {
+                InetAddress group = InetAddresses.fromInteger(base + i);
+                DatagramPacket packet = new DatagramPacket(bytes, bytes.length, group, 5000);
+                sockets[i].send(packet);
+                System.out.println("Sent " + payload + " to " + group);
+            }
+            Thread.sleep(opts.getSleepInterval());
         }
     }
 }
