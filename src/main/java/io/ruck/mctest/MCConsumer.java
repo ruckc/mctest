@@ -32,7 +32,7 @@ public final class MCConsumer {
     private MCConsumer() {
     }
 
-    public static void run(MCOptions opts) throws IOException {
+    public static void run(MCOptions opts) throws IOException, InterruptedException {
         int base = InetAddresses.coerceToInteger(opts.getGroup());
         Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
         Iterator<NetworkInterface> nifs = new Iterator<NetworkInterface>() {
@@ -86,6 +86,8 @@ public final class MCConsumer {
                         Logger.getLogger(MCConsumer.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 });
+            } else {
+                Thread.sleep(opts.getSleepInterval());
             }
         }
     }
